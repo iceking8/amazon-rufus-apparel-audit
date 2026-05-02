@@ -1,0 +1,75 @@
+# agent 配置:Amazon Rufus 服装 Listing 审计
+# 这个文件是 agent 平台读取的元信息,用来在产品里展示 skill。
+# 真正的执行逻辑在 SKILL.md 和 references/ 里。
+
+display_name: "Amazon Rufus 服装 Listing 审计"
+
+short_description: >
+  服装类目卖家专用。通过 Rufus 抓取竞品和自家 Listing 的买家问答,
+  识别尺码/版型/面料/场合/洗护/差评/竞品对比七维内容空缺,
+  产出针对 A10/COSMO/Rufus 三算法对齐的中文优化方案,
+  直接给到运营美工执行(改图N第N屏 / bullet N / A+ 模块N)。
+
+# 默认 prompt 模板,引导用户给出最少必要输入
+default_prompt: |
+  请帮我做一次 Amazon 服装 Listing Rufus 审计。
+
+  我的输入:
+  - 自家 ASIN:[填,如 B0XXXXXXX]
+  - 竞品 ASIN(3-5 个):[填,逗号分隔]
+  - 站点:[com / co.uk / de],默认 com
+  - 子类目:[连衣裙 / 上衣 / 裤装 / 外套 / 内衣 / 泳装 / 运动服 / 童装]
+  - 目标人群(可选):[如 25-35 通勤女性 / 健身爱好者 / 宝妈日常]
+  - 自动化抓取还是手动粘贴 Q&A:[自动 / 手动]
+  - 抓取深度(默认每个 ASIN 15-25 条):[填或留空]
+
+  请按 SKILL.md 里的四阶段流程(Profile → Plan → Capture → Report)
+  执行。报告语言用中文,要直接给到"改主图第N张"、"bullet N 改成…"
+  这种粒度。
+
+# 这个 skill 触发的关键词(便于 agent 平台索引)
+trigger_keywords:
+  - 服装 Listing 优化
+  - Amazon Rufus 竞品分析
+  - 服装 Q&A 抓取
+  - A10 排名
+  - COSMO 召回
+  - Rufus 推荐
+  - apparel listing audit
+  - 尺码差评分析
+  - Amazon 算法对齐
+  - 亚马逊服装运营
+
+# skill 期望的环境变量(用户在 secret 通道配置)
+required_secrets:
+  - name: AMAZON_BUYER_EMAIL
+    description: "Amazon 买家账号邮箱(只用于 Rufus 抓取登录)"
+    required: true
+  - name: AMAZON_BUYER_PASSWORD
+    description: "Amazon 买家账号密码"
+    required: true
+  - name: AMAZON_BUYER_OTP_SECRET
+    description: "TOTP base32 secret(账号开了 2FA 时必填)"
+    required: false
+  - name: AMAZON_BUYER_PHONE
+    description: "买家账号绑定的手机号(遇到手机验证时用)"
+    required: false
+
+# 输出物
+outputs:
+  - path: "out/capture_baseline.csv"
+    description: "原始 Q&A 抓取数据,每行一个问答"
+  - path: "out/capture_health.json"
+    description: "抓取健康摘要(成功率/失败原因)"
+  - path: "out/listing_snapshot_*.json"
+    description: "每个 ASIN 的 Listing 字段快照"
+  - path: "out/aggregated_data.json"
+    description: "按七维聚合的中间数据(给 Claude 读)"
+  - path: "out/report_skeleton_cn.md"
+    description: "中文报告骨架(已填健康节、担忧地图,留 TODO 给 Claude 填修改方案)"
+  - path: "out/coverage_matrix.csv"
+    description: "覆盖矩阵(由 Claude 在 chat 中产出)"
+  - path: "out/fix_tracker.csv"
+    description: "修改任务跟踪表(由 Claude 在 chat 中产出)"
+
+version: "1.0.0"
